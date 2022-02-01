@@ -8,6 +8,3 @@ def hello():
 @app.route('/login')	
 def login():
 	return 'LOGIN'
-
-if __name__=='__main__':
-    app.run()
