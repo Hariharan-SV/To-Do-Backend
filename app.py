@@ -47,5 +47,5 @@ def get_todos_for_current_user(is_authenticated):
 	body = json.loads(request.get_data().decode('utf-8'))
 	return handle_todos(body['userDetails'])
 
-if __name__ == "__main__":
-	app.run(debug=True)
+# if __name__ == "__main__":
+# 	app.run(debug=True)
