@@ -57,3 +57,5 @@ python-dotenv
 flask-cors
 
 bcrypt
+
+mysql-connector-python
