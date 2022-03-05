@@ -1,23 +1,19 @@
 from flask import Flask, request	
-import os
 from os.path import join, dirname
 from dotenv import load_dotenv
-import mysql.connector
-import bcrypt
+from flask_cors import CORS
+import json
+from helpers.auth import get_session, token_required
+
+from services.login import handle_login
+from services.register import handle_register
+from services.todo import handle_todos
 
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
 app = Flask(__name__)
-salt = os.environ.get('SALT')
-my_db = mysql.connector.connect(
-  host= os.environ.get('DB_SERVER'),
-  user= os.environ.get('USER_NAME'),
-  password= os.environ.get('PASS_WORD'),
-  database = os.environ.get('DB_NAME'),
-  port=3306
-)
-my_cursor = my_db.cursor()
+CORS(app)
 
 @app.route('/', methods = ['GET'])	
 def hello():
@@ -25,24 +21,31 @@ def hello():
 
 @app.route('/login', methods = ['POST'])	
 def login():
-	body = request.get_json()
-	if 'email' not in body or 'password' not in body:
-		return 'Bad request'
-	my_cursor.execute("SELECT * from USERS WHERE email = "+body['email']+";")
-	results = my_cursor.fetchall()
-	print(results)
-	return 'LOGIN'+body['username']+' '+body['password']
-
-@app.route('/signup', methods=['POST'])
-def signup():
-	body = request.get_json()
-	if 'email' not in body or 'password' not in body:
+	body = json.loads(request.get_data().decode('utf-8'))
+	if not body or 'email' not in body or 'password' not in body:
 		return {'message':'Bad request'}
-	hashed_password = bcrypt.hashpw(body['password'], salt)
-	my_cursor.execute("SELECT * from USERS WHERE email = "+body['email']+";")
-	results = my_cursor.fetchall()
-	print(results, hashed_password)
-	return { 'message' : 'SUCCESS'}
+	res = handle_login(body)
+	return res
+
+@app.route('/register', methods=['POST'])
+def signup():
+	body = json.loads(request.get_data().decode('utf-8'))
+	if not body or 'email' not in body or 'password' not in body or 'name' not in body:
+		return {'message':'Bad request'}
+	return handle_register(body)
+
+@app.route('/get-session', methods = ['POST'])	
+@token_required
+def get_session_details(is_authenticated):
+	return get_session()
+
+@app.route('/get-todos', methods = ['POST'])
+@token_required
+def get_todos_for_current_user(is_authenticated):
+	if not is_authenticated:
+		return { 'status': 'FAILED', 'message': 'token is missing'}
+	body = json.loads(request.get_data().decode('utf-8'))
+	return handle_todos(body['userDetails'])
 
 if __name__ == "__main__":
 	app.run(debug=True)
