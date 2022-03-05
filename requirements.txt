@@ -53,3 +53,5 @@ wheel == 0.37.1
 PyJWT
 
 python-dotenv
+
+flask-cors
