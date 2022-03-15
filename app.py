@@ -7,7 +7,7 @@ from helpers.auth import get_session, token_required
 
 from services.login import handle_login
 from services.register import handle_register
-from services.todo import handle_todos
+from services.todo import handle_todo_add, handle_todo_edit, handle_todos
 
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
@@ -37,6 +37,8 @@ def signup():
 @app.route('/get-session', methods = ['POST'])	
 @token_required
 def get_session_details(is_authenticated):
+	if not is_authenticated:
+		return { 'status': 'FAILED', 'message': 'token is missing'}
 	return get_session()
 
 @app.route('/get-todos', methods = ['POST'])
@@ -46,6 +48,19 @@ def get_todos_for_current_user(is_authenticated):
 		return { 'status': 'FAILED', 'message': 'token is missing'}
 	body = json.loads(request.get_data().decode('utf-8'))
 	return handle_todos(body['userDetails'])
+
+@app.route('/todo', methods = ['POST', 'PUT'])
+@token_required
+def todos_for_current_user(is_authenticated):
+	if not is_authenticated:
+		return { 'status': 'FAILED', 'message': 'token is missing'}
+	body = json.loads(request.get_data().decode('utf-8'))
+	print(body)
+	if request.method == 'POST':
+		return handle_todo_add(body)
+	if request.method == 'PUT':
+		return handle_todo_edit(body)
+	return { 'status': 'FAILED', 'message': 'Bad Request'}
 
 # if __name__ == "__main__":
 # 	app.run(debug=True)
